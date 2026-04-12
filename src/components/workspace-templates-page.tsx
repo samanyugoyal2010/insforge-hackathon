@@ -85,9 +85,7 @@ export function WorkspaceTemplatesPage({
       <div className="px-4 py-6 sm:px-6 md:px-10">
         <div className="mx-auto max-w-6xl">
           <p className="max-w-2xl text-sm leading-relaxed text-zinc-400">
-            Starter ideas in everyday language—open one for detail, then use it
-            on Home as your first prompt. Later we&apos;ll tie this to PCB,
-            BOM, ordering, and guided help end-to-end.
+            pick a starting point to see how Node0 works, then customize it for your own build.
           </p>
 
           <div className="mt-5 max-w-md">

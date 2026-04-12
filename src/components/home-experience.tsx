@@ -201,7 +201,7 @@ export function HomeExperience() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="font-heading max-w-[min(100%,42rem)] text-balance text-[clamp(1.75rem,5.5vw+0.6rem,2.5rem)] font-bold leading-[1.12] tracking-[-0.02em] text-white drop-shadow-[0_2px_28px_rgba(0,0,0,0.4)] sm:text-4xl md:text-6xl md:leading-[1.02] md:tracking-[-0.03em] lg:text-7xl"
           >
-            Build hardware in seconds.
+            Go from idea to hardware, fast.
           </motion.h1>
           <motion.p
             variants={{
@@ -211,7 +211,7 @@ export function HomeExperience() {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="mt-5 max-w-xl text-pretty text-base font-normal leading-relaxed tracking-wide text-white/72 drop-shadow-[0_1px_12px_rgba(0,0,0,0.3)] md:mt-7 md:text-lg md:leading-relaxed"
           >
-            The lovable layer for electronics—from schematic to ship.
+            The direct path from idea to electronics.
           </motion.p>
 
             <motion.div
@@ -298,11 +298,12 @@ export function HomeExperience() {
                   Welcome
                 </p>
                 <h2 className="font-heading mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-white md:text-4xl">
-                  Ship hardware with a sentence.
+                  Describe your board. We'll build the rest.
                 </h2>
                 <p className="mt-4 max-w-[36ch] text-[15px] leading-relaxed text-white/65 md:text-base">
-                  Node0 turns plain-language ideas into structured electronics
-                  context—so your team moves from napkin to schematic faster.
+                  Node0 turns descriptions into schematics, BOMs, and layouts
+                  in minutes—helping your team move from sketch to prototype
+                  faster.
                 </p>
                 <ul className="mt-8 space-y-3 text-sm text-white/55 md:text-[15px]">
                   <li className="flex gap-3">
@@ -310,21 +311,22 @@ export function HomeExperience() {
                       className="mt-2 h-1 w-1 shrink-0 rounded-full bg-white/35"
                       aria-hidden
                     />
-                    Board-aware suggestions, not generic chat
+                    Actually understands your board, unlike generic AI tools
                   </li>
                   <li className="flex gap-3">
                     <span
                       className="mt-2 h-1 w-1 shrink-0 rounded-full bg-white/35"
                       aria-hidden
                     />
-                    BOM and layout-minded outputs you can iterate on
+                    Generates real BOMs and layouts ready for production
                   </li>
                   <li className="flex gap-3">
                     <span
                       className="mt-2 h-1 w-1 shrink-0 rounded-full bg-white/35"
                       aria-hidden
                     />
-                    Built for teams who care about rigor and velocity
+                    Built for teams that need to move fast without breaking
+                    things
                   </li>
                 </ul>
               </div>

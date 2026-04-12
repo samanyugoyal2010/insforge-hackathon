@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Node0",
-  description: "Build hardware in seconds.",
+  description: "The direct path from idea to hardware prototype.",
 };
 
 export const viewport: Viewport = {

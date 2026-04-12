@@ -105,27 +105,27 @@ function SiteNavbarInner() {
                     </Dialog.Close>
                   </div>
                   <Dialog.Description className="sr-only">
-                    Node0 turns descriptions into structured hardware work:
-                    ideation, BOM direction, and board-minded suggestions for
-                    teams shipping electronics faster.
+                  Node0 turns descriptions into real hardware work:
+                    architecture options, BOMs, and layouts you can actually
+                    use to build faster.
                   </Dialog.Description>
                   <div className="mt-5 space-y-4 text-left text-sm leading-relaxed text-white/75 md:text-[0.9375rem]">
                     <p>
                       <strong className="font-medium text-white/95">Node0</strong>{" "}
-                      turns a short description into structured hardware work:
-                      architecture choices, BOM direction, and layout-minded
-                      outputs you can iterate on fast.
+                      turns descriptions into real hardware work:
+                      architecture options, BOMs, and layouts you can actually
+                      use to build.
                     </p>
                     <ul className="list-inside list-disc space-y-2 text-white/70 marker:text-white/40">
                       <li>
-                        Natural-language ideation → concrete electronics
-                        directions
+                        Turn simple descriptions into concrete electronics
+                        schematics
                       </li>
                       <li>
-                        Schematic- and board-aware suggestions, not generic chat
+                        Actually understands your board, unlike generic AI tools
                       </li>
                       <li>
-                        Built for teams who want hardware velocity without losing
+                        Built for teams that need to move fast without losing
                         rigor
                       </li>
                     </ul>

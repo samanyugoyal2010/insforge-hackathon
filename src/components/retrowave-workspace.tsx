@@ -2099,7 +2099,7 @@ export function RetrowaveWorkspace() {
                           <Cpu className="size-3.5" strokeWidth={1.75} />
                         </div>
                         <p className="mt-2 text-xs leading-relaxed text-zinc-500">
-                          Send a message to begin.
+                          Tell us what you're building to get started.
                         </p>
                       </div>
                     ) : null}
@@ -2163,7 +2163,7 @@ export function RetrowaveWorkspace() {
                       >
                         <div className="max-w-[min(100%,18rem)] rounded-2xl border border-zinc-800 bg-zinc-900/85 px-3 py-2">
                           <p className="text-[13px] leading-relaxed text-zinc-200">
-                            Node0 is drafting
+                            Node0 is drafting your updates
                             <span className="ml-1 animate-pulse text-zinc-400">
                               …
                             </span>
@@ -2181,7 +2181,7 @@ export function RetrowaveWorkspace() {
                   {assistantDrafting ? (
                     <div className="mb-1.5 flex items-center justify-between px-1">
                       <p className="text-[11px] text-zinc-400">
-                        Node0 is working on your current request...
+                        Drafting your board updates...
                       </p>
                       {currentAbortController && (
                         <button
