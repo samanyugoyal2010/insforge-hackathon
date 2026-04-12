@@ -1,0 +1,39 @@
+# Dependencies & build output (rebuilt in image)
+node_modules
+.next
+out
+
+# Local Python (image creates its own .venv-pcbflow)
+.venv-pcbflow
+**/__pycache__
+*.pyc
+
+# Git & IDE
+.git
+.gitignore
+.cursor
+*.md
+!README.md
+
+# Secrets & local env (set on Render dashboard)
+.env
+.env.*
+!.env.example
+
+# Large / irrelevant for production image
+circuitron-*
+circuitron_output
+**/lib_pickle_dir
+*.pkl
+debug_response.json
+final_test.json
+terminals
+coverage
+
+# Test & scratch scripts at repo root (optional shrink)
+test_*.py
+test_*.js
+test_*.sh
+debug_*.js
+quick_test.py
+simple_led_test.*

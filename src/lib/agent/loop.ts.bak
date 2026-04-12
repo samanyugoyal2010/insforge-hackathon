@@ -1,0 +1,135 @@
+import OpenAI from "openai";
+import {
+  type AgentModelPayload,
+  type AgentStateSnapshot,
+  parseAgentPayload,
+} from "@/lib/agent/contracts";
+import { executeToolCalls } from "@/lib/agent/tool-executor";
+
+const MAX_STEPS = 3;
+
+function makeSystemInstruction(mode: "default" | "search" | "think") {
+  if (mode === "think") {
+    return (
+      "You are Node0, an expert hardware design agent. " +
+      "Think in steps and emit structured tool calls to modify CAD/PCB/BOM when appropriate. " +
+      "Always return strict JSON only: {\"reply\":string,\"toolCalls\":[...]}."
+    );
+  }
+  return (
+    "You are Node0, a practical hardware copilot. " +
+    "Use tool calls when concrete CAD/PCB/BOM updates are needed. " +
+    "For PCB work, include structured connections with components, nets, and traces in update_pcb args. " +
+    "Always return strict JSON only: {\"reply\":string,\"toolCalls\":[...]}."
+  );
+}
+
+function fallbackPayload(raw: string): AgentModelPayload {
+  const parsed = parseAgentPayload(raw);
+  if (parsed) return parsed;
+  return { reply: raw.trim() || "No response.", toolCalls: [] };
+}
+
+export async function runAgentLoop(params: {
+  client: OpenAI;
+  mode: "default" | "search" | "think";
+  projectName: string;
+  message: string;
+  conversationContext?: string;
+  images: string[];
+  initialState: AgentStateSnapshot;
+  onStep?: (event: {
+    step: number;
+    maxSteps: number;
+    reply: string;
+    toolCalls: AgentModelPayload["toolCalls"];
+    toolResults: ReturnType<typeof executeToolCalls>["results"];
+    state: AgentStateSnapshot;
+  }) => void;
+}) {
+  const { client, mode, projectName, message, images } = params;
+  let workingState = params.initialState;
+  let finalReply = "";
+  const allToolCalls: AgentModelPayload["toolCalls"] = [];
+  const allToolResults: ReturnType<typeof executeToolCalls>["results"] = [];
+  const intentSource = `${params.conversationContext ?? ""}\n${message}`;
+  const designIntent = /\b(build|design|pcb|bom|cad|schematic|enclosure|board|circuit|sensor|component|layout|go ahead|proceed|continue)\b/i.test(
+    intentSource,
+  );
+
+  for (let step = 0; step < MAX_STEPS; step += 1) {
+    const completion = await client.responses.create({
+      model: mode === "think" ? "gpt-4.1" : "gpt-4o-mini",
+      ...(mode === "search"
+        ? { tools: [{ type: "web_search_preview" as const }] }
+        : {}),
+      input: [
+        {
+          role: "system",
+          content: makeSystemInstruction(mode),
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text:
+                `Project: ${projectName}\n` +
+                `Request: ${message}\n` +
+                `${params.conversationContext ? `Recent conversation:\n${params.conversationContext}\n` : ""}` +
+                `Current CAD: ${JSON.stringify(workingState.cad)}\n` +
+                `Current PCB: ${JSON.stringify(workingState.pcb)}\n` +
+                `Current BOM: ${JSON.stringify(workingState.bom)}\n` +
+                `Step: ${step + 1}/${MAX_STEPS}\n` +
+                `${designIntent && step === 0 ? "This is a design request: return at least one tool call.\n" : ""}` +
+                "If no more edits are needed, return empty toolCalls.",
+            },
+            ...images.map((imageUrl) => ({
+              type: "input_image" as const,
+              image_url: imageUrl,
+            })),
+          ],
+        },
+      ],
+    });
+
+    const raw = completion.output_text?.trim() ?? "";
+    const parsed = fallbackPayload(raw);
+    finalReply = parsed.reply;
+
+    if (parsed.toolCalls.length === 0) {
+      params.onStep?.({
+        step: step + 1,
+        maxSteps: MAX_STEPS,
+        reply: parsed.reply,
+        toolCalls: [],
+        toolResults: [],
+        state: workingState,
+      });
+      if (designIntent && step === 0) {
+        continue;
+      }
+      break;
+    }
+
+    const executed = executeToolCalls(workingState, parsed.toolCalls);
+    workingState = executed.state;
+    allToolCalls.push(...parsed.toolCalls);
+    allToolResults.push(...executed.results);
+    params.onStep?.({
+      step: step + 1,
+      maxSteps: MAX_STEPS,
+      reply: parsed.reply,
+      toolCalls: parsed.toolCalls,
+      toolResults: executed.results,
+      state: workingState,
+    });
+  }
+
+  return {
+    reply: finalReply,
+    toolCalls: allToolCalls,
+    toolResults: allToolResults,
+    nextState: workingState,
+  };
+}

@@ -1,0 +1,19 @@
+# PCBFlow engine (server-side). Recommended: project venv (installs from GitHub):
+#
+#   npm run setup:pcbflow
+#
+# That creates .venv-pcbflow/; Next.js will use it automatically when NODE0_PYTHON is unset.
+# Manual install (same as upstream docs: clone + pip install ., or pip from git):
+#
+#   pip install -r requirements-pcbflow.txt
+#   pip install "git+https://github.com/michaelgale/pcbflow.git"
+#
+# Env (Next.js server process):
+#   NODE0_PYTHON — Python binary (default: python3)
+#   NODE0_PCBFLOW_TIMEOUT_MS — subprocess timeout ms (default: 120000, max 600000)
+#   NODE0_PCBFLOW_MODEL — OpenAI model for pcbflow script codegen (default: gpt-4o-mini)
+#
+# Security: PCBFlow runs LLM-generated Python on the host — use only in trusted setups
+# or isolate (container, no network, resource limits).
+#
+shapely>=2.0.1
