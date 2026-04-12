@@ -34,7 +34,10 @@ function SiteNavbarInner() {
   }, []);
 
   const onDashboard = pathname === "/dashboard";
+  const onSlides = pathname === "/slides";
   const workspaceMinimalNav = hasMockSession && onDashboard;
+
+  if (onSlides) return null;
 
   async function signOut() {
     clearWorkspaceStorage();
