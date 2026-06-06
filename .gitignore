@@ -54,3 +54,20 @@ circuitron_output/
 *.pkl
 debug_response.json
 final_test.json
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.augment
+.claude
+.cline
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf
+
+certificates
