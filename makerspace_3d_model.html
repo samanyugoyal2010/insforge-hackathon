@@ -1,0 +1,350 @@
+
+<h2 class="sr-only">Interactive 3D model of the makerspace/workshop room with drag-to-orbit and zoom controls</h2>
+<div id="container" style="width:100%;height:600px;position:relative;background:#1a1a2e;border-radius:var(--border-radius-lg);overflow:hidden;">
+  <div id="info" style="position:absolute;top:12px;left:12px;z-index:10;font-size:12px;color:rgba(255,255,255,0.6);pointer-events:none;">
+    Drag to orbit · Scroll to zoom · Right-drag to pan
+  </div>
+  <div id="legend" style="position:absolute;bottom:12px;left:12px;z-index:10;font-size:11px;color:rgba(255,255,255,0.7);line-height:1.8;">
+    <div><span style="display:inline-block;width:10px;height:10px;background:#e8d5b7;border-radius:2px;margin-right:6px;"></span>Work desks</div>
+    <div><span style="display:inline-block;width:10px;height:10px;background:#2a6496;border-radius:2px;margin-right:6px;"></span>CNC / laser cutter</div>
+    <div><span style="display:inline-block;width:10px;height:10px;background:#5a8a6a;border-radius:2px;margin-right:6px;"></span>3D printer</div>
+    <div><span style="display:inline-block;width:10px;height:10px;background:#333;border-radius:2px;margin-right:6px;"></span>TV / whiteboard</div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const container = document.getElementById('container');
+const W = container.clientWidth, H = container.clientHeight;
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(W, H);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+scene.fog = new THREE.Fog(0x1a1a2e, 30, 60);
+
+const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 100);
+camera.position.set(12, 10, 14);
+camera.lookAt(0, 2, 0);
+
+// Ambient + directional light
+const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0xfff8e7, 1.2);
+sun.position.set(6, 12, 8);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 50;
+sun.shadow.camera.left = -15;
+sun.shadow.camera.right = 15;
+sun.shadow.camera.top = 15;
+sun.shadow.camera.bottom = -15;
+scene.add(sun);
+
+// Warm fill from window side
+const fill = new THREE.DirectionalLight(0xb8d4f0, 0.5);
+fill.position.set(-8, 5, -6);
+scene.add(fill);
+
+// Strip lights on ceiling
+const strip1 = new THREE.PointLight(0xfff0cc, 0.6, 12);
+strip1.position.set(0, 5.8, 0);
+scene.add(strip1);
+const strip2 = new THREE.PointLight(0xfff0cc, 0.5, 10);
+strip2.position.set(-4, 5.8, -3);
+scene.add(strip2);
+
+function mat(color, rough=0.8, metal=0){
+  return new THREE.MeshStandardMaterial({color, roughness:rough, metalness:metal});
+}
+function box(w,h,d, m, x,y,z, ry=0){
+  const g = new THREE.BoxGeometry(w,h,d);
+  const mesh = new THREE.Mesh(g, m);
+  mesh.position.set(x,y,z);
+  mesh.rotation.y = ry;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  return mesh;
+}
+
+// Room dimensions: ~9m wide × 8m deep × 5.5m tall (high-ceiling makerspace)
+const RW=9, RD=8, RH=5.5;
+
+// --- Floor ---
+const floorGeo = new THREE.PlaneGeometry(RW, RD);
+const floorMat = new THREE.MeshStandardMaterial({color:0x2a2320, roughness:0.9});
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI/2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Floor grid accent lines
+const grid = new THREE.GridHelper(18, 18, 0x3a3330, 0x3a3330);
+grid.position.y = 0.01;
+scene.add(grid);
+
+// --- Ceiling (wood planks — warm brown) ---
+const ceilMat = mat(0x8b5e3c, 0.85);
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(RW, RD), ceilMat);
+ceil.rotation.x = Math.PI/2;
+ceil.position.y = RH;
+ceil.receiveShadow = true;
+scene.add(ceil);
+
+// Exposed beams on ceiling
+const beamMat = mat(0x5a3a1a, 0.8);
+for(let i=-3;i<=3;i+=2){
+  box(0.2, 0.3, RD+0.2, beamMat, i, RH-0.15, 0);
+}
+
+// --- Walls ---
+const wallMat = mat(0xf0ede8, 0.9); // white walls
+
+// Back wall (south, -Z)
+const backWall = box(RW, RH, 0.15, wallMat, 0, RH/2, -RD/2);
+
+// Left wall (west, -X) — has door
+const leftWall = box(0.15, RH, RD, wallMat, -RW/2, RH/2, 0);
+
+// Right wall (east, +X) — brick texture + large windows
+const brickMat = mat(0x7a4a35, 0.95);
+const rightWall = box(0.15, RH, RD, brickMat, RW/2, RH/2, 0);
+
+// Front wall (north, +Z) — mostly glass interior partition + exterior windows
+const frontWall = box(RW, RH*0.35, 0.12, wallMat, 0, RH*0.18, RD/2);
+
+// Upper front clerestory glazing area (glass partitions to open office)
+const glassMat = new THREE.MeshStandardMaterial({color:0x88aacc, transparent:true, opacity:0.25, roughness:0.1, metalness:0.1});
+const upperGlass = new THREE.Mesh(new THREE.PlaneGeometry(RW, RH*0.6), glassMat);
+upperGlass.position.set(0, RH*0.65, RD/2-0.07);
+scene.add(upperGlass);
+
+// Glass frames (black bars) for front clerestory
+const frameMat = mat(0x1a1a1a, 0.6, 0.5);
+for(let x=-4;x<=4;x+=2){
+  box(0.1, RH*0.6, 0.08, frameMat, x, RH*0.65, RD/2-0.06);
+}
+box(RW, 0.1, 0.08, frameMat, 0, RH*0.35, RD/2-0.06);
+box(RW, 0.1, 0.08, frameMat, 0, RH*0.95, RD/2-0.06);
+
+// Large exterior windows on right (brick) wall — lower + upper band
+const extGlassMat = new THREE.MeshStandardMaterial({color:0xadd8f0, transparent:true, opacity:0.35, roughness:0.05});
+// Lower windows
+for(let z=-2.5;z<=2.5;z+=2){
+  const wg = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 1.8), extGlassMat);
+  wg.rotation.y = -Math.PI/2;
+  wg.position.set(RW/2-0.07, 1.8, z);
+  scene.add(wg);
+  box(0.05, 1.9, 0.08, frameMat, RW/2-0.06, 1.8, z-0.95);
+  box(0.05, 1.9, 0.08, frameMat, RW/2-0.06, 1.8, z+0.95);
+}
+// Upper clerestory on right wall
+const uGlass = new THREE.Mesh(new THREE.PlaneGeometry(0.1, RD), extGlassMat);
+uGlass.rotation.y = -Math.PI/2;
+uGlass.position.set(RW/2-0.07, RH*0.7, 0);
+scene.add(uGlass);
+
+// --- DOOR (left/front corner, wooden frame) ---
+const doorMat = mat(0xc8a060, 0.85);
+box(1.1, 2.4, 0.1, doorMat, -RW/2+0.6, 1.2, RD/2-0.05);
+// Door frame
+box(0.1, 2.6, 0.12, mat(0xa07840,0.85), -RW/2+0.06, 1.3, RD/2-0.05);
+box(0.1, 2.6, 0.12, mat(0xa07840,0.85), -RW/2+1.14, 1.3, RD/2-0.05);
+box(1.2, 0.12, 0.12, mat(0xa07840,0.85), -RW/2+0.6, 2.56, RD/2-0.05);
+
+// Wooden post/column (visible in photos, left side near door)
+box(0.22, RH, 0.22, mat(0x8b5e3c,0.8), -RW/2+0.25, RH/2, RD/2-0.6);
+
+// --- WALL-MOUNTED TV (on main white wall, back-left area) ---
+const tvBodyMat = mat(0x111111, 0.4, 0.8);
+const tvScreenMat = mat(0x1a1a2e, 0.1, 0.2);
+box(2.2, 1.25, 0.07, tvBodyMat, -1.5, 3.0, -RD/2+0.1);
+const tvScreen = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 1.1), tvScreenMat);
+tvScreen.position.set(-1.5, 3.0, -RD/2+0.14);
+scene.add(tvScreen);
+
+// --- WORK DESK 1 (near TV, white adjustable-height desk) ---
+const deskTopMat = mat(0xf5f5f5, 0.6);
+const deskLegMat = mat(0xe0e0e0, 0.5, 0.3);
+// Desk top
+box(2.4, 0.06, 0.9, deskTopMat, -0.5, 0.88, -RD/2+0.65);
+// Legs
+box(0.06, 0.88, 0.06, deskLegMat, -1.5, 0.44, -RD/2+0.2);
+box(0.06, 0.88, 0.06, deskLegMat, 0.5, 0.44, -RD/2+0.2);
+box(0.06, 0.88, 0.06, deskLegMat, -1.5, 0.44, -RD/2+1.1);
+box(0.06, 0.88, 0.06, deskLegMat, 0.5, 0.44, -RD/2+1.1);
+// Items on desk
+box(0.4, 0.04, 0.3, mat(0x222222,0.4,0.5), -0.2, 0.94, -RD/2+0.65); // keyboard
+box(0.15, 0.15, 0.15, mat(0x444444,0.5), 0.4, 1.0, -RD/2+0.65); // misc item
+
+// Chair near desk
+const chairMat = mat(0x222222, 0.8);
+box(0.5, 0.04, 0.5, chairMat, -0.5, 0.52, -RD/2+1.6); // seat
+box(0.5, 0.6, 0.06, chairMat, -0.5, 0.85, -RD/2+1.87); // back
+box(0.06, 0.5, 0.06, chairMat, -0.72, 0.26, -RD/2+1.38);
+box(0.06, 0.5, 0.06, chairMat, -0.28, 0.26, -RD/2+1.38);
+box(0.06, 0.5, 0.06, chairMat, -0.72, 0.26, -RD/2+1.82);
+box(0.06, 0.5, 0.06, chairMat, -0.28, 0.26, -RD/2+1.82);
+
+// --- WORK DESK 2 (middle of room, worktop with equipment) ---
+box(2.2, 0.06, 0.85, deskTopMat, 1.2, 0.88, -RD/2+1.5);
+box(0.06, 0.88, 0.06, deskLegMat, 0.1, 0.44, -RD/2+1.1);
+box(0.06, 0.88, 0.06, deskLegMat, 2.3, 0.44, -RD/2+1.1);
+box(0.06, 0.88, 0.06, deskLegMat, 0.1, 0.44, -RD/2+1.95);
+box(0.06, 0.88, 0.06, deskLegMat, 2.3, 0.44, -RD/2+1.95);
+
+// Chair near desk 2
+box(0.5, 0.04, 0.5, chairMat, 1.2, 0.52, -RD/2+2.6);
+box(0.5, 0.6, 0.06, chairMat, 1.2, 0.85, -RD/2+2.87);
+box(0.06, 0.5, 0.06, chairMat, 0.98, 0.26, -RD/2+2.38);
+box(0.06, 0.5, 0.06, chairMat, 1.42, 0.26, -RD/2+2.38);
+box(0.06, 0.5, 0.06, chairMat, 0.98, 0.26, -RD/2+2.82);
+box(0.06, 0.5, 0.06, chairMat, 1.42, 0.26, -RD/2+2.82);
+
+// --- BAMBU LAB 3D PRINTER (on desk 2) ---
+const printerMat = mat(0xe8e8e8, 0.5, 0.2);
+const printerDarkMat = mat(0x1a1a1a, 0.4, 0.3);
+box(0.4, 0.55, 0.4, printerMat, 1.5, 1.19, -RD/2+1.5);
+box(0.38, 0.08, 0.38, printerDarkMat, 1.5, 1.47, -RD/2+1.5); // top spool area
+// Bambu logo accent
+box(0.05, 0.3, 0.05, mat(0x3a7a5a,0.5), 1.5, 1.07, -RD/2+1.28);
+
+// --- CNC / LASER CUTTER (large table, right side) ---
+const cncTableMat = mat(0x5a4020, 0.9);
+const cncBodyMat = mat(0x2a4a6a, 0.6, 0.3);
+// CNC table base
+box(3.5, 0.85, 1.8, cncTableMat, 3.0, 0.43, 1.0);
+// CNC gantry
+box(3.6, 0.08, 0.08, cncBodyMat, 3.0, 0.95, 0.25); // X rail
+box(0.08, 0.25, 1.8, cncBodyMat, 1.3, 1.08, 1.0); // left upright
+box(0.08, 0.25, 1.8, cncBodyMat, 4.7, 1.08, 1.0); // right upright
+box(0.15, 0.15, 0.15, mat(0x888888,0.4,0.6), 3.0, 1.05, 0.2); // spindle
+// Work surface on CNC
+const cncSurfMat = mat(0x3a3a3a, 0.8);
+box(3.4, 0.04, 1.6, cncSurfMat, 3.0, 0.88, 1.0);
+
+// --- WHITEBOARD (right side wall near back) ---
+const wbMat = new THREE.MeshStandardMaterial({color:0xf8f8f8, roughness:0.3, metalness:0.05});
+const wbFrameMat = mat(0xaaaaaa, 0.5, 0.5);
+box(2.2, 0.04, 1.6, wbMat, 3.5, 1.8, -RD/2+0.12); // whiteboard face
+box(2.2, 1.62, 0.04, wbMat, 3.5, 1.8, -RD/2+0.08);
+box(2.24, 0.06, 0.06, wbFrameMat, 3.5, 2.62, -RD/2+0.11);
+box(2.24, 0.06, 0.06, wbFrameMat, 3.5, 1.0, -RD/2+0.11);
+box(0.06, 1.68, 0.06, wbFrameMat, 2.38, 1.8, -RD/2+0.11);
+box(0.06, 1.68, 0.06, wbFrameMat, 4.62, 1.8, -RD/2+0.11);
+
+// --- DRONE FRAMES on wall (right/back corner) ---
+const droneMat = mat(0x1a1a1a, 0.7, 0.4);
+function droneFrame(x, y, z, scale=1){
+  // Cross shape (4 arms)
+  box(scale*0.6, scale*0.05, scale*0.1, droneMat, x, y, z);
+  box(scale*0.1, scale*0.05, scale*0.6, droneMat, x, y, z);
+  box(scale*0.08, scale*0.08, scale*0.08, mat(0x333333,0.5), x, y+scale*0.05, z);
+}
+droneFrame(-3.2, 2.5, -RD/2+0.08, 0.9);
+droneFrame(-2.5, 2.8, -RD/2+0.08, 0.75);
+droneFrame(-3.5, 3.1, -RD/2+0.08, 0.6);
+
+// --- CARDBOARD BOXES (on floor near CNC) ---
+const boxMat = mat(0xd4a96a, 0.95);
+box(0.6, 0.55, 0.5, boxMat, 2.0, 0.28, 2.5);
+box(0.7, 0.4, 0.6, boxMat, 2.8, 0.2, 2.8);
+box(0.5, 0.65, 0.45, boxMat, 1.3, 0.33, 2.6);
+
+// Wooden pallets under stuff
+const palletMat = mat(0x9a7040, 0.9);
+box(1.5, 0.12, 1.0, palletMat, 2.5, 0.06, 2.2);
+
+// --- EQUIPMENT/MISC near laser cutter ---
+// Air compressor (orange/red stand)
+box(0.35, 0.6, 0.35, mat(0xcc4422,0.7), 1.8, 0.3, 1.8);
+// Shop vac
+box(0.3, 0.5, 0.3, mat(0x111111,0.7), 2.4, 0.25, 2.2);
+box(0.32, 0.1, 0.32, mat(0xcc2222,0.6), 2.4, 0.5, 2.2);
+
+// --- ACOUSTIC PANELS (white shapes hanging from ceiling) ---
+const panelMat = new THREE.MeshStandardMaterial({color:0xf0f0e8, roughness:0.95});
+for(let i=0;i<3;i++){
+  const pw = box(0.6, 1.2, 0.08, panelMat, -3+i*2, RH-0.9, -1);
+  pw.rotation.z = (i%2)*0.12-0.06;
+}
+// Right side panels
+box(0.55, 1.0, 0.08, panelMat, 1.5, RH-0.8, -2, 0.15);
+box(0.55, 0.9, 0.08, panelMat, 3.0, RH-0.85, -1, -0.1);
+
+// --- HVAC DUCT on ceiling ---
+const ductMat = mat(0x8a8a8a, 0.5, 0.7);
+box(0.45, 0.45, 3.5, ductMat, -RW/2+0.9, RH-0.3, -0.5);
+box(0.4, 0.4, 0.4, ductMat, -RW/2+0.9, RH-0.3, 1.3);
+
+// --- ORBIT CONTROLS (manual implementation) ---
+let isDragging = false, isRightDrag = false;
+let lastX = 0, lastY = 0;
+let theta = 0.7, phi = 0.6, radius = 20;
+let targetX = 0, targetY = 2.5, targetZ = 0;
+let panX = 0, panY = 0;
+
+const el = renderer.domElement;
+el.addEventListener('mousedown', e => {
+  isDragging = true;
+  isRightDrag = e.button === 2;
+  lastX = e.clientX; lastY = e.clientY;
+  e.preventDefault();
+});
+el.addEventListener('contextmenu', e => e.preventDefault());
+el.addEventListener('mousemove', e => {
+  if(!isDragging) return;
+  const dx = e.clientX - lastX, dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+  if(isRightDrag){
+    panX -= dx * 0.02;
+    panY += dy * 0.02;
+  } else {
+    theta -= dx * 0.01;
+    phi = Math.max(0.1, Math.min(1.4, phi - dy * 0.01));
+  }
+});
+el.addEventListener('mouseup', () => isDragging = false);
+el.addEventListener('mouseleave', () => isDragging = false);
+el.addEventListener('wheel', e => {
+  radius = Math.max(5, Math.min(35, radius + e.deltaY * 0.05));
+  e.preventDefault();
+}, {passive:false});
+
+// Touch support
+let lastTouch = null;
+el.addEventListener('touchstart', e => {
+  isDragging = true;
+  lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+  e.preventDefault();
+}, {passive:false});
+el.addEventListener('touchmove', e => {
+  if(!isDragging) return;
+  const dx = e.touches[0].clientX - lastX, dy = e.touches[0].clientY - lastY;
+  lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+  theta -= dx * 0.01;
+  phi = Math.max(0.1, Math.min(1.4, phi - dy * 0.01));
+  e.preventDefault();
+}, {passive:false});
+el.addEventListener('touchend', () => isDragging = false);
+
+function animate(){
+  requestAnimationFrame(animate);
+  const cx = radius * Math.sin(phi) * Math.sin(theta);
+  const cy = radius * Math.cos(phi);
+  const cz = radius * Math.sin(phi) * Math.cos(theta);
+  camera.position.set(cx + panX, cy + panY, cz);
+  camera.lookAt(panX, panY + 2, panZ || 0);
+  renderer.render(scene, camera);
+}
+
+let panZ = 0;
+animate();
+</script>
